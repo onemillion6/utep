@@ -16,7 +16,7 @@ var player ={
 	map: "0",
 	name: "Name",
 	day: 1,
-	revealed: []
+	revealed: ["#map_0"]
 };
 
 var stats_ids = ["introspection", "goalorientation", "datadrive", "creativity"];
@@ -33,6 +33,7 @@ var map_days = [7, 30, 30];
 var lp_reqs = [20, 3, 5, 10] // Reflections, objectives, assessments, objectives
 
 var bool_lp_alive = false;
+var bool_fighting = false;
 
 var original_choice = 0; // Resource index of currently gathering resource
 
@@ -42,7 +43,7 @@ var original_choice = 0; // Resource index of currently gathering resource
  */
 function get_lvl_threshold() {
 	var x = player.lvl
-	var new_threshold = Math.round(2*x*x/10)*10+10;		
+	var new_threshold = Math.round(2*x*x/10)*10+20;		
 	return new_threshold;
 }
 
@@ -72,15 +73,11 @@ function set_s() {
 };
 
 // Calculate lesson plan health, attack, and defense
-function set_lp_atk() {
+function set_lp() {
 	lp_stats[0] = 5 + player.atk_lvl * 5;
-};
-function set_lp_def () {
 	lp_stats[1] = 0 + player.def_lvl * 5;
-};
-function set_lp_hp() {
 	lp_stats[2] = 10 + player.hp_lvl * 5; // each level --> +5 hp
-}; 
+}
 
 /* ======================================================
  *  UPDATE FUNCTIONS
@@ -145,6 +142,12 @@ function update_s() {
 	$( "#s_def" ).html(s_stats[1]);
 }
 
+//Update LP Atk and Def
+function update_lp() {
+	$( "#lp_atk" ).html(lp_stats[0]);
+	$( "#lp_def" ).html(lp_stats[1]);
+}
+
 // Update Player Attack Level on Screen
 function update_atk_lvl() {
 	$( "#atk_lvl" ).html(player.atk_lvl);
@@ -168,12 +171,25 @@ function update_view() {
 		update_rates(i);
 	}
 	
+	$( "#" + player.map + "_" + player.day).addClass("current-day");
+	
 	update_lessonplans();
 	update_atk_lvl();
 	update_def_lvl();
 	update_hp_lvl();
 	update_lvl();
 	update_exp();
+	
+	set_s();
+	update_s();
+	set_lp();
+	update_lp();
+	update_hp("#s_health", s_stats[2], s_stats[2])
+	update_hp("#lp_health", lp_stats[2], lp_stats[2])
+	
+	update_upgrade_button("atk");
+	update_upgrade_button("def");
+	update_upgrade_button("hp");
 };
 
 /* ======================================================
@@ -327,7 +343,7 @@ document.getElementById( "bttn_lessonplans" ).onclick = function() {
 		player.resources[3] = player.resources[3] - lp_reqs[3];
 		player.lesson_plans++;
 		update_lessonplans();
-		exp_up(2);
+		exp_up(10);
 	}
 	
 	if( $( "#map_box" ).hasClass("hidden") && player.lesson_plans > 0) {
@@ -340,26 +356,61 @@ document.getElementById( "bttn_lessonplans" ).onclick = function() {
 // TEACH BUTTON
 // -------------------------------------------------------
 $( "#bttn_fight" ).click( function() {
-	// Check that a fight is not already in progress
-	if ( !$( "#bttn_fight" ).hasClass("disabled") ) {
-		// If there is a current LP alive
-		if (bool_lp_alive) {
-			fight();
-			$( "#bttn_fight" ).addClass("disabled");
+	if ( !bool_fighting ) {
 		// If there is no life LP, but there are reserves
-		} else if(player.lesson_plans > 0) {
+		if(player.lesson_plans > 0) {
 			player.lesson_plans = player.lesson_plans - 1;
 			update_lessonplans();
 			bool_lp_alive = true;
-			fight();
-			$( "#bttn_fight" ).addClass("disabled");
 		} 
-		// Do nothing if there is no LP alive and no reserves
+		// If there is a current LP alive
+		if (bool_lp_alive) {
+			bool_fighting = true;
+			fight();
+			/*while (bool_lp_alive) {
+				fight();
+			}*/
+			$( "#bttn_fight" ).addClass("disabled");
+		}
 	}
+	
 });
+
+/*$( "#bttn_fight" ).click( function() {
+	// Check that a fight is not already in progress
+	if ( !bool_fighting ) {
+		// If there is no life LP, but there are reserves
+		if(player.lesson_plans > 0) {
+			player.lesson_plans = player.lesson_plans - 1;
+			update_lessonplans();
+			bool_lp_alive = true;
+		} 
+		// If there is a current LP alive
+		if (bool_lp_alive) {
+			fight();
+			bool_fighting = true;
+			$( "#bttn_fight" ).addClass("disabled");
+		}
+	}
+});*/
 
 // UPGRADE BUTTONS
 // -------------------------------------------------------
+// Type: atk, def, hp
+function update_upgrade_button(type) {
+	var level;
+	if (type == "atk") {
+		level = player.atk_lvl;
+	} else if (type == "def") {
+		level = player.def_lvl;
+	} else { // type == "hp"
+		level = player.hp_lvl;
+	}
+	var lp_required = Math.pow(level + 2, 2);
+	
+	$( "#bttn_"+type ).html("Buy for "+lp_required+" LP");
+};
+
 $( "#bttn_atk" ).click( function() {
 	var lp_required = Math.pow(player.atk_lvl + 2, 2); // (x+2)^2
 	if (player.lesson_plans >= lp_required) {
@@ -369,8 +420,7 @@ $( "#bttn_atk" ).click( function() {
 		update_atk_lvl();
 		
 		// Update Button
-		lp_required = Math.pow(player.atk_lvl + 2, 2);
-		$( "#bttn_atk" ).html("Buy for "+lp_required+" LP");
+		update_upgrade_button("atk");
 	}
 });
 
@@ -383,8 +433,7 @@ $( "#bttn_def" ).click( function() {
 		update_def_lvl();
 		
 		// Update Button
-		lp_required = Math.pow(player.def_lvl + 2, 2);
-		$( "#bttn_def" ).html("Buy for "+lp_required+" LP");
+		update_upgrade_button("def");
 	}
 });
 
@@ -397,10 +446,31 @@ $( "#bttn_hp" ).click( function() {
 		update_hp_lvl();
 		
 		// Update Button
-		lp_required = Math.pow(player.hp_lvl + 2, 2);
-		$( "#bttn_hp" ).html("Buy for "+lp_required+" LP");
+		update_upgrade_button("hp");
 	}
 });
+
+// DAY BUTTONS
+// -------------------------------------------------------
+$( ".day" ).click(function () {
+	var day_clicked = parseInt(this.id.split("_")[1]);
+	//console.log(day_clicked);
+	if (day_clicked < player.day && !bool_fighting) {
+		// Remove "current-day" class from old day
+		var day_id = "#" + player.map + "_" + player.day;
+		$( day_id ).removeClass("current-day");
+		
+		// Move to day clicked on map
+		player.day = day_clicked;
+		day_id = "#" + player.map + "_" + player.day;
+		$( day_id ).addClass("current-day");
+		
+		// Reset to Student from day clicked 
+		set_s();
+		update_s();	
+		update_hp("#s_health", s_stats[2], s_stats[2]);
+	} 
+})
 
 // RESET BUTTON
 // -------------------------------------------------------
@@ -418,7 +488,8 @@ document.getElementById("reset").onclick = function() {
 	player.map = "0";
 	player.name = "Name";
 	player.day = 1;
-	
+	player.revealed = ["#map_0"];
+
 	$( "#bttn_objectives" ).removeClass("active")
 	$( "#bttn_assessments" ).removeClass("active");
 	$( "#bttn_activities" ).removeClass("active");
@@ -433,14 +504,21 @@ document.getElementById("reset").onclick = function() {
 		set_resource_rates(i, 0);
 	}
 	
+	localStorage.clear();
+	
 	update_view();
 	$( "#dialogue" ).html("");
 	$( "#reflections_box" ).addClass("hidden");
-	//$( "#reflections_box").addClass("hidden");
+	$( "#lessonplans_box").addClass("hidden");
 	$( "#toggles").addClass("hidden");
 	$( "#map_box").addClass("hidden");
 	$( "#lessonstudies_box").addClass("hidden");
 	
+	resource_rates = [0,0,0,0]; // Rates are resources per second
+	lp_stats = [0,0,0,0]; // atk, def, maxhp, current hp
+	s_stats = [1,1,10];  // atk, def, maxhp
+	bool_lp_alive = false;
+	original_choice = 0; // Resource index of currently gathering resource
 	//save_game();
 }
 
@@ -469,8 +547,13 @@ function progress_map() {
 	} else if (player.map != "2"){
 		// Hide old map, reveal new map
 		$( "#map_" + player.map ).addClass("hidden");
+		var index = player.revealed.indexOf("#map_" + player.map);
+		if (index !== -1) {
+		    player.revealed.splice(index, 1);
+		}
 		player.map = (map_num+1).toString();
 		$( "#map_" + player.map ).removeClass("hidden");
+		player.revealed.push("#map_" + player.map);
 		player.day = 1;
 		
 	// Player is finishing the final map
@@ -485,9 +568,7 @@ function progress_map() {
 function fight() {
 
 	// Lesson Plan Stats
-	set_lp_atk();
-	set_lp_def();
-	set_lp_hp();
+	set_lp();
 		
 	var lp_atk = lp_stats[0];
 	var lp_def = lp_stats[1];
@@ -506,8 +587,7 @@ function fight() {
 	var s_maxhp = s_stats[2];
 	var s_currhp = s_maxhp;
 	
-	$( "#lp_atk" ).html(lp_atk);
-	$( "#lp_def" ).html(lp_def);
+	update_lp();
 	update_hp("#s_health", s_currhp, s_maxhp);
 	update_hp("#lp_health", lp_currhp, lp_maxhp);
 		
@@ -543,7 +623,8 @@ function fight() {
 			}
 			exp_up(Math.max(student_xp + player.day, 10));
 			
-			$( "#bttn_fight" ).removeClass("disabled");
+			setTimeout( fight(), 2000);
+			
 		} else {
 			// S attacks
 			setTimeout( function() {
@@ -561,6 +642,7 @@ function fight() {
 					clearInterval(fight_interval);
 					bool_lp_alive = false;
 					lp_stats[3] = 0;
+					bool_fighting = false;
 					$( "#bttn_fight" ).removeClass("disabled");
 					
 					if( $( "#0_6" ).hasClass("current-day") ) {
@@ -611,12 +693,12 @@ function exp_up(increase) {
  * ======================================================
  */
 function save_game() {
-	localStorage['utepgame_save14'] = btoa(JSON.stringify(player));
+	localStorage['utepgame_save15'] = btoa(JSON.stringify(player));
 }
  
 function load_game() {
 	// No save data, new game!
-    if (!localStorage['utepgame_save14']){
+    if (!localStorage['utepgame_save15']){
     	$( "#dialogue" ).html("> <b>Welcome to Orientation Week of UTEP! </b>");
     	setTimeout(function() {
     		$( "#dialogue" ).prepend("> Hmm...Look at all those zeroes. </br>");
@@ -629,7 +711,7 @@ function load_game() {
     	
     	return;
     }
- 	var save_data = JSON.parse(atob(localStorage['utepgame_save14']));
+ 	var save_data = JSON.parse(atob(localStorage['utepgame_save15']));
  	player = save_data;
 }
 
@@ -639,6 +721,7 @@ function load_game() {
  */
 load_game(); //attempt to load the game
 reveal_hidden();
+$( "#" + player.map + "_" + player.day).addClass("current-day");
 for (i=0; i<4; i++) {
 	set_resource_rates(i, 0);
 }
@@ -653,5 +736,5 @@ auto_collect = setInterval(function () {
 
 update_view();
 
-// Saves game every 3 seconds
+// Saves game every few seconds
 //setInterval(function () { save_game(); }, 5000);
