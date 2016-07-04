@@ -1,0 +1,44 @@
+
+
+
+** Need to restore stat points and stats to default
+
+Player can gain xp based on:
+- Students taught			5 xp
+- Lesson plans created		2 xp
+- Reflections *clicked*			1 xp
+
+Level		XP required
+1			10
+2			
+exponential model: 
+
+
+Things I need to do:
+1. Level up design and function
+2. Lesson studies buttons to function
+3. Look up: How to add text to the story box
+4. Look up: How to color cells in table
+
+
+document.getElementById("cell_one").style.backgroundColor= "red";
+
+  var tableRow = document.getElementsByTagName("tr")[currentRow];
+        var tableCell = tableRow.childNodes[currentCell];
+        
+        
+How to create student stats
+How is damage calculated
+
+Student health: round( 1/4   *   (x-1)^2 + 10  )
+
+LP atk = x+5
+
+
+
+On start fight: Set interval to
+	1. lesson plan atk
+	2. modify student hp (progress bar)
+	3. student atk
+	4. modify lesson hp (progress bar)
+	5. 
