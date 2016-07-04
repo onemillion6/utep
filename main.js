@@ -454,7 +454,7 @@ $( "#bttn_hp" ).click( function() {
 // -------------------------------------------------------
 $( ".day" ).click(function () {
 	var day_clicked = parseInt(this.id.split("_")[1]);
-	//console.log(day_clicked);
+	console.log(day_clicked);
 	if (day_clicked < player.day && !bool_fighting) {
 		// Remove "current-day" class from old day
 		var day_id = "#" + player.map + "_" + player.day;
@@ -621,7 +621,10 @@ function fight() {
 			} else if (map_num == 2) {
 				student_xp = 37;
 			}
-			exp_up(Math.max(student_xp + player.day, 10));
+			
+			var gained_xp = Math.max(student_xp + player.day, 10);
+			$( "#dialogue" ).prepend("> Student " + (student_xp + player.day) + " taught! Experience gained: " +gained_xp +"</br>");
+			exp_up(gained_xp);
 			
 			setTimeout( fight(), 2000);
 			
