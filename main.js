@@ -623,7 +623,7 @@ function fight() {
 			}
 			
 			var gained_xp = Math.max(student_xp + player.day, 10);
-			$( "#dialogue" ).prepend("> Student " + (student_xp + player.day) + " taught! Experience gained: " +gained_xp +"</br>");
+			$( "#dialogue" ).prepend("> Student " + (student_xp + player.day-1) + " taught! Experience gained: " +gained_xp +"</br>");
 			exp_up(gained_xp);
 			
 			setTimeout( fight(), 2000);
