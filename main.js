@@ -16,7 +16,7 @@ var player ={
 	map: "0",
 	name: "Name",
 	day: 1,
-	revealed: ["#map_0"]
+	revealed: []
 };
 
 var stats_ids = ["introspection", "goalorientation", "datadrive", "creativity"];
@@ -67,9 +67,9 @@ function set_s() {
 		constant = 37;
 	}
 	var day = player.day + constant;
-	s_stats[0] = Math.ceil(day*day/15); 					  	// ATK		1/15  x^2
-	s_stats[1] = Math.ceil(day*day/20); 						// DEF		1/20 x^2
-	s_stats[2] = Math.round(0.25 * Math.pow(day-1, 2)  + 10); 	// HP		round( 0.25 *  (x-1)^2 + 10  )
+	s_stats[0] = Math.ceil(day*day/30); 					  	// ATK		1/30  x^2
+	s_stats[1] = Math.round(day*day/50); 						// DEF		1/50 x^2
+	s_stats[2] = Math.round(0.05 * Math.pow(day-1, 2)  + 10); 	// HP		round( 1/20 *  (x-1)^2 + 10  )
 };
 
 // Calculate lesson plan health, attack, and defense
@@ -86,7 +86,12 @@ function set_lp() {
 // Update Hidden Divs
 function reveal_hidden() {
 	for (i=0; i<player.revealed.length; i++){
-		$( player.revealed[i] ).removeClass("hidden");
+		var id = player.revealed[i];
+		if (id == "#map_1" || id == "#map_2") {
+			$( id ).fadeIn();
+		} else {
+			$( id ).css("visibility", "visible").hide().fadeIn();
+		}
 	} 
 };
 
@@ -248,9 +253,11 @@ document.getElementById( "bttn_reflect" ).onclick = function() {
     update_resources(0);  //updates the text
     exp_up(1);
     
-    if ( $( "#objectives_box" ).hasClass("hidden") && player.resources[0] > 5) {
-    	$( "#objectives_box" ).removeClass("hidden");
-    	$( "#stat_objectives" ).removeClass("hidden");
+    if ( $( "#objectives_box" ).css("visibility") === "hidden" && player.resources[0] > 5) {
+    	
+    	$("#objectives_box").css('visibility','visible').hide().fadeIn();
+    	$("#stat_objectives").css('visibility','visible').hide().fadeIn();
+    	
     	$( "#dialogue" ).prepend("> When you lesson plan, be sure to first identify your objectives. </br>");
     	player.revealed.push("#objectives_box");
     	player.revealed.push("#stat_objectives");
@@ -289,26 +296,27 @@ function toggle_work(resource_index) {
 			update_resources(i);
 		}
 		
-		if ( $( "#assessments_box" ).hasClass("hidden") && player.resources[1] > lp_reqs[1]) {
-	    	$( "#assessments_box" ).removeClass("hidden");
+		if ( $( "#assessments_box" ).css("visibility") === "hidden" && player.resources[1] > lp_reqs[1]) {
 	    	$( "#dialogue" ).prepend("> Next, create assessments that align to your objectives. </br>");
+	    	
+	    	$( "#assessments_box" ).css('visibility','visible').hide().fadeIn();
 	    	player.revealed.push("#assessments_box");
 	    	
-	    	$( "#stat_assessments" ).removeClass("hidden");
+	    	$( "#stat_assessments" ).css('visibility','visible').hide().fadeIn();
 	    	player.revealed.push("#stat_assessments");
-	    }
+	  	    }
 		
-		if ( $( "#activities_box" ).hasClass("hidden") && player.resources[2] > lp_reqs[2]) {
-	    	$( "#activities_box" ).removeClass("hidden");
+		if ( $( "#activities_box" ).css("visibility") === "hidden" && player.resources[2] > lp_reqs[2]) {
+	    	$( "#activities_box" ).css('visibility','visible').hide().fadeIn();
 	    	$( "#dialogue" ).prepend("> Last, create activites that support students to reach your objectives. </br>");
 	    	player.revealed.push("#activities_box");
 	    	
-	    	$( "#stat_activities" ).removeClass("hidden");
+	    	$( "#stat_activities" ).css('visibility','visible').hide().fadeIn();
 	    	player.revealed.push("#stat_activities");
 	    }
 		
-		if ( $( "#lessonplans_box" ).hasClass("hidden") && player.resources[3] > 5 ) {
-	    	$( "#lessonplans_box" ).removeClass("hidden");
+		if ( $( "#lessonplans_box" ).css("visibility") === "hidden" && player.resources[3] > 5 ) {
+	    	$( "#lessonplans_box" ).css('visibility','visible').hide().fadeIn();
 	    	$( "#dialogue" ).prepend("> What progress! Now you know how to lesson plan...UbD style! </br>");
 	    	player.revealed.push("#lessonplans_box");
 	    }
@@ -332,9 +340,35 @@ document.getElementById( "bttn_activities" ).onclick = function() {
 };
 
 
-// LESSON PLAN FORGE BUTTON
+// LESSON PLAN FORGE BUTTON (Press and hold)
 // -------------------------------------------------------
-document.getElementById( "bttn_lessonplans" ).onclick = function() {
+function holdit(btn, action, start, speedup) {
+    var t;
+
+    var repeat = function () {
+        action();
+        t = setTimeout(repeat, start);
+        start = Math.max(start / speedup, 50);
+    }
+
+    btn.onmousedown = function() {
+        repeat();
+    }
+
+    btn.onmouseup = function () {
+        clearTimeout(t);
+        start = 400;
+        speedup = 1.4;
+    }
+    
+    btn.onmouseout = function () {
+        clearTimeout(t);
+        start = 400;
+        speedup = 1.4;
+    }
+};
+
+function forge_lp() {
 	if (player.resources[0] >= lp_reqs[0] && player.resources[1] >= lp_reqs[1] && 
 			player.resources[2] >= lp_reqs[2] && player.resources[3] >= lp_reqs[3]) {
 		player.resources[0] = player.resources[0] - lp_reqs[0];
@@ -346,12 +380,16 @@ document.getElementById( "bttn_lessonplans" ).onclick = function() {
 		exp_up(10);
 	}
 	
-	if( $( "#map_box" ).hasClass("hidden") && player.lesson_plans > 0) {
-		$( "#map_box" ).removeClass("hidden");
+	if( $( "#map_box" ).css("visibility") === "hidden" && player.lesson_plans > 0) {
+		$( "#map_box" ).css("visibility", "visible");
+		$( "#map_0" ).fadeIn();
 		$( "#dialogue" ).prepend("> Try teaching your shiny new lesson plan to a student...</br>");
 		player.revealed.push("#map_box");
+		player.revealed.push("#map_0");
 	}
-}
+};
+
+holdit(document.getElementById( "bttn_lessonplans" ), forge_lp, 400, 1.4);
 
 // TEACH BUTTON
 // -------------------------------------------------------
@@ -367,32 +405,11 @@ $( "#bttn_fight" ).click( function() {
 		if (bool_lp_alive) {
 			bool_fighting = true;
 			fight();
-			/*while (bool_lp_alive) {
-				fight();
-			}*/
 			$( "#bttn_fight" ).addClass("disabled");
 		}
 	}
 	
 });
-
-/*$( "#bttn_fight" ).click( function() {
-	// Check that a fight is not already in progress
-	if ( !bool_fighting ) {
-		// If there is no life LP, but there are reserves
-		if(player.lesson_plans > 0) {
-			player.lesson_plans = player.lesson_plans - 1;
-			update_lessonplans();
-			bool_lp_alive = true;
-		} 
-		// If there is a current LP alive
-		if (bool_lp_alive) {
-			fight();
-			bool_fighting = true;
-			$( "#bttn_fight" ).addClass("disabled");
-		}
-	}
-});*/
 
 // UPGRADE BUTTONS
 // -------------------------------------------------------
@@ -454,7 +471,7 @@ $( "#bttn_hp" ).click( function() {
 // -------------------------------------------------------
 $( ".day" ).click(function () {
 	var day_clicked = parseInt(this.id.split("_")[1]);
-	console.log(day_clicked);
+	//console.log(day_clicked);
 	if (day_clicked < player.day && !bool_fighting) {
 		// Remove "current-day" class from old day
 		var day_id = "#" + player.map + "_" + player.day;
@@ -488,7 +505,7 @@ document.getElementById("reset").onclick = function() {
 	player.map = "0";
 	player.name = "Name";
 	player.day = 1;
-	player.revealed = ["#map_0"];
+	player.revealed = [];
 
 	$( "#bttn_objectives" ).removeClass("active")
 	$( "#bttn_assessments" ).removeClass("active");
@@ -505,14 +522,21 @@ document.getElementById("reset").onclick = function() {
 	}
 	
 	localStorage.clear();
-	
+	load_game();
 	update_view();
 	$( "#dialogue" ).html("");
-	$( "#reflections_box" ).addClass("hidden");
-	$( "#lessonplans_box").addClass("hidden");
-	$( "#toggles").addClass("hidden");
-	$( "#map_box").addClass("hidden");
-	$( "#lessonstudies_box").addClass("hidden");
+	$( "#stat_points" ).html("0");
+	$( "#reflections_box" ).css("visibility", "hidden");
+	$( "#lessonplans_box").css("visibility", "hidden");
+	$( "#assessments_box").css("visibility", "hidden");
+	$( "#objectives_box").css("visibility", "hidden");
+	$( "#activities_box").css("visibility", "hidden");
+	$( "#map_box").css("visibility", "hidden");
+	$( "#map_0").css("visibility", "hidden");
+	$( "#map_1").css("visibility", "hidden");
+	$( "#map_2").css("visibility", "hidden");
+	$( "#lessonstudies_box").css("visibility", "hidden");
+	
 	
 	resource_rates = [0,0,0,0]; // Rates are resources per second
 	lp_stats = [0,0,0,0]; // atk, def, maxhp, current hp
@@ -543,16 +567,22 @@ function progress_map() {
 	// Player is not at the end of a map
 	if (player.day < map_days[map_num]) {
 		player.day++;
+		// Reveal uprades after map 5
+		if( player.map+"_"+player.day === "0_6" ) {
+			$( "#dialogue" ).prepend("> How about some upgrades? </br>");
+			$( "#lessonstudies_box" ).css("visibility", "visible").hide().fadeIn();
+			player.revealed.push("#lessonstudies_box");
+		}
 	// Player is progressing to map 1 or 2
 	} else if (player.map != "2"){
 		// Hide old map, reveal new map
-		$( "#map_" + player.map ).addClass("hidden");
+		$( "#map_" + player.map ).css("display", "none");
 		var index = player.revealed.indexOf("#map_" + player.map);
 		if (index !== -1) {
 		    player.revealed.splice(index, 1);
 		}
 		player.map = (map_num+1).toString();
-		$( "#map_" + player.map ).removeClass("hidden");
+		$( "#map_" + player.map ).fadeIn();
 		player.revealed.push("#map_" + player.map);
 		player.day = 1;
 		
@@ -564,6 +594,24 @@ function progress_map() {
 	day_id = "#" + player.map + "_" + player.day;
 	$( day_id ).addClass("current-day");
 };
+
+// Calculates randomized damage
+function get_damage(enemy_attack, defense) {
+	// Generate a random number between -.2 and .2 (20% range)
+	var min = -20;
+	var max = 20;
+	var random_percent = Math.floor(Math.random()*(max-min+1)+min) / 100; 
+		
+	// Every hit does at least 1 damage
+	damage = Math.max(1, Math.round((1+random_percent) * enemy_attack));
+	
+	// If defense blocks all damage
+	if (defense > damage){
+		damage = 0;
+	}
+	
+	return damage;
+}
 
 function fight() {
 
@@ -594,13 +642,8 @@ function fight() {
 	// Begin fight!
 	var fight_interval = setInterval(function () {
 		
-		// LP attack
-		if (lp_atk > s_def) {
-			s_currhp = s_currhp - (lp_atk - s_def);
-		}
-		if (s_currhp < 0) {
-			s_currhp = 0;
-		}
+		// LP attacks
+		s_currhp = Math.max( s_currhp - get_damage(lp_atk, s_def), 0);
 		update_hp("#s_health", s_currhp, s_maxhp);
 		
 		// LP wins, S loses
@@ -608,7 +651,7 @@ function fight() {
 			clearInterval(fight_interval);
 			
 			// Reset for next fight
-			setTimeout( progress_map(), 1000);
+			setTimeout( progress_map, 750);
 			set_s();
 			update_s();	
 			lp_stats[3] = lp_currhp;
@@ -622,37 +665,26 @@ function fight() {
 				student_xp = 37;
 			}
 			
-			var gained_xp = Math.max(student_xp + player.day, 10);
-			$( "#dialogue" ).prepend("> Student " + (student_xp + player.day-1) + " taught! Experience gained: " +gained_xp +"</br>");
+			var gained_xp = 2* Math.max(student_xp + player.day, 10);
+			$( "#dialogue" ).prepend("> Student " + (student_xp + player.day) + " learned! exp+" +gained_xp +"</br>");
 			exp_up(gained_xp);
 			
-			setTimeout( fight(), 2000);
+			setTimeout( fight, 2000 );
 			
 		} else {
-			// S attacks
 			setTimeout( function() {
-				
-				if (s_atk > lp_def) {
-					lp_currhp = lp_currhp - (s_atk - lp_def);
-				}
-				if (lp_currhp < 0) {
-					lp_currhp = 0;
-				}
+				// S attacks
+				lp_currhp = Math.max( lp_currhp - get_damage(s_atk, lp_def), 0);
 				update_hp("#lp_health", lp_currhp, lp_maxhp);
 				
 				// S wins, LP loses
 				if(lp_currhp <= 0) {
 					clearInterval(fight_interval);
-					bool_lp_alive = false;
 					lp_stats[3] = 0;
+					bool_lp_alive = false;
 					bool_fighting = false;
+					$( "#dialogue" ).prepend("> Your lesson plan failed to teach. </br>")
 					$( "#bttn_fight" ).removeClass("disabled");
-					
-					if( $( "#0_6" ).hasClass("current-day") ) {
-						$( "#dialogue" ).prepend("> How about some upgrades? </br>");
-						$( "#lessonstudies_box" ).removeClass("hidden");
-						player.revealed.push("#lessonstudies_box");
-					}
 				}
 			}, 1000);
 		}
@@ -704,10 +736,10 @@ function load_game() {
     if (!localStorage['utepgame_save15']){
     	$( "#dialogue" ).html("> <b>Welcome to Orientation Week of UTEP! </b>");
     	setTimeout(function() {
-    		$( "#dialogue" ).prepend("> Hmm...Look at all those zeroes. </br>");
+    		$( "#dialogue" ).prepend("> Hmm...Looks like you have a lot of learning to do... </br>");
     		setTimeout(function() {
-    			$( "#dialogue" ).prepend("> No matter; we can change that! Start by doing some reflecting. </br>");
-                $( "#reflections_box" ).removeClass("hidden");
+    			$( "#dialogue" ).prepend("> Let's get started. The key to teaching and learning is reflecting! </br>");
+                $( "#reflections_box" ).css("visibility", "visible");
                 player.revealed.push("#reflections_box");
     		}, 2000);
     	}, 2000);
