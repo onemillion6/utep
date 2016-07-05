@@ -575,6 +575,13 @@ function progress_map() {
 		}
 	// Player is progressing to map 1 or 2
 	} else if (player.map != "2"){
+		if (player.map == "0") {
+			$( "#dialogue" ).prepend("> Congratuations! You've completed O-week! Onto Induction Year~ " +
+					"(If you get stuck, you can always return to teaching former students.) </br>");
+		} else {
+			$( "#dialogue" ).prepend("> Congratuations! You've completed Induction Year! Onto Residency~ </br>");
+		}
+		
 		// Hide old map, reveal new map
 		$( "#map_" + player.map ).css("display", "none");
 		var index = player.revealed.indexOf("#map_" + player.map);
